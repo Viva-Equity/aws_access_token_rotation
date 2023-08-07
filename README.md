@@ -2,6 +2,8 @@
 
 This is a simple script to facilitate rotating access tokens on AWS.
 
+If you got here when trying to rotate keys for FanInc, head over to [the parent repo](https://github.com/Viva-Equity/faninc-rotate-aws-keys.git) and follow the instructions there.
+
 ### Why?
 
 AWS access tokens can live for a very long time if no attention is paid to them. They pose a great potential risk since they can grant bad actors access to critical infrastracture of our apps.
