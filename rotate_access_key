@@ -1,26 +1,27 @@
 #!/usr/bin/env sh
 
-source "./private/rotate_access_key"
+script_path=$(dirname ${BASH_SOURCE[0]})
+source "$script_path/private/rotate_access_key"
 
-function rotate() {
-  set_preferences "$@"
+function rotate_access_key() {
+  rac_set_preferences "$@"
 
-  print "Running in verbose mode"
+  rac_print "Running in verbose mode"
 
-  print "Fetching existing access tokens..."
-  local keys=$(run_iam_command list-access-keys | jq '.AccessKeyMetadata | sort_by(.CreateDate)' -r)
-  print "Found keys $keys"
+  rac_print "Fetching existing access tokens..."
+  local keys=$(rac_run_iam_command list-access-keys | jq '.AccessKeyMetadata | sort_by(.CreateDate)' -r)
+  rac_print "Found keys $keys"
   local key_length=$(echo $keys | jq '. | length')
 
   case $key_length in
-    0) create_and_run_callback;;
-    1) rotate_single_key $(echo "$keys" | jq '. | first | .AccessKeyId' -r);;
-    2) remove_key_and_rotate "$keys";;
+    0) rac_create_and_run_callback;;
+    1) rac_rotate_single_key $(echo "$keys" | jq '. | first | .AccessKeyId' -r);;
+    2) rac_remove_key_and_rotate "$keys";;
     *)
-      echoerr "Unexpected amount of existing tokens: $key_length. exiting..."
-      echoerr "Keys found: $keys"
+      rac_echoerr "Unexpected amount of existing tokens: $key_length. exiting..."
+      rac_echoerr "Keys found: $keys"
       exit 0
       ;;
   esac
-  print "Access key successfully rotated"
+  rac_print "Access key successfully rotated"
 }

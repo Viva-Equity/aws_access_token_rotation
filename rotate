@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 
-source "./rotate_access_key"
+script_path=$(dirname ${BASH_SOURCE[0]})
+source "$script_path/rotate_access_key"
 
 # entry point for runnning this script standalone
-rotate "$@"
+rotate_access_key "$@"

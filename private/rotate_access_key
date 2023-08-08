@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-function usage() {
+function rac_usage() {
   cat << HELP_USAGE
 This method accepts a user name on AWS, rotates their access token, and performs a callback function with the new access token.
 
@@ -8,7 +8,7 @@ If the user has no access tokens currently, a new token will be created for them
 If the user has one access token currently, the new token will be created along side it first and the old one will be removed after the callback function completes.
 If the user has two access tokens, one of the existing tokens will be removed and rotated, while the other one will stay untouched (by default).
 
-usage: rotate [-kdhv] [-p profile] [-u username] [-c callback]
+rac_usage: rotate [-kdhv] [-p profile] [-u username] [-c callback]
 
 -k           if there was previously one token, keep old access token
 -d           destroy all old access tokens (even if -k was passed)
@@ -21,21 +21,21 @@ usage: rotate [-kdhv] [-p profile] [-u username] [-c callback]
 HELP_USAGE
 }
 
-function print() {
+function rac_print() {
   if [[ $verbose == 1 ]]; then 
     echo $@
   fi
 }
 
-echoerr() { echo "$@" 1>&2; }
+rac_echoerr() { echo "$@" 1>&2; }
 
-function run_iam_command() {
+function rac_run_iam_command() {
   command=$1
   shift
   aws iam $command --profile $profile --user $username $@
 }
 
-function set_preferences() {
+function rac_set_preferences() {
   keep_old_token=0
   destroy_old_tokens=0
   remove_newer=0
@@ -48,7 +48,7 @@ function set_preferences() {
       d) destroy_old_tokens=1;;
       v) verbose=1;;
       n) remove_newer=1;;
-      h) usage; exit 0;;
+      h) rac_usage; exit 0;;
       p) profile=$OPTARG;;
       u) username=$OPTARG;;
       c) callback=$OPTARG;;
@@ -56,67 +56,67 @@ function set_preferences() {
     esac
   done
 
-  print "Profile: $profile"
+  rac_print "Profile: $profile"
   if [[ -z $profile ]]; then
-    echoerr "Error: AWS profile required"
+    rac_echoerr "Error: AWS profile required"
     exit 1
   fi
 
-  print "Username: $username"
+  rac_print "Username: $username"
   if [[ -z $username ]]; then
-    echoerr "Error: AWS username required"
-    usage
+    rac_echoerr "Error: AWS username required"
+    rac_usage
     exit 1
   fi
 }
 
-function remove_existing_token() {
+function rac_remove_existing_token() {
   local access_key_id="$1"
 
-  print "Removing key with ID $access_key_id..."
+  rac_print "Removing key with ID $access_key_id..."
 
-  run_iam_command delete-access-key --access-key-id "$access_key_id"
+  rac_run_iam_command delete-access-key --access-key-id "$access_key_id"
 
-  print "Key with ID $access_key_id removed successfully."
+  rac_print "Key with ID $access_key_id removed successfully."
 }
 
-function create_and_run_callback() {
-  print "Creating new key..."
-  new_credentials=$(run_iam_command create-access-key)
-  print "Running callback function with new access key..."
+function rac_create_and_run_callback() {
+  rac_print "Creating new key..."
+  new_credentials=$(rac_run_iam_command create-access-key)
+  rac_print "Running callback function with new access key..."
 
   if [[ -z $callback ]]; then
-    print "Callback not passed, printing out credentials instead."
-    print "$new_credentials"
+    rac_print "Callback not passed, printing out credentials instead."
+    rac_print "$new_credentials"
   else
     $callback "$new_credentials"
   fi
 }
 
-function rotate_single_key() {
+function rac_rotate_single_key() {
   local existing_token_access_id_key="$1"
   local destroy_existing=${2:-$((1-keep_old_token))}
 
-  create_and_run_callback
+  rac_create_and_run_callback
 
   if [[ $destroy_existing == 1 ]]; then
-    print "Removing existing token..."
-    remove_existing_token "$existing_token_access_id_key"
+    rac_print "Removing existing token..."
+    rac_remove_existing_token "$existing_token_access_id_key"
   fi
 }
 
-function remove_key_and_rotate() {
+function rac_remove_key_and_rotate() {
   local keys="$1"
 
   newer=$(echo $keys | jq '. | last | .AccessKeyId' -r)
   older=$(echo $keys | jq '. | first | .AccessKeyId' -r)
 
   if [[ "$remove_newer" == 1 ]]; then
-    remove_existing_token "$newer" 
-    rotate_single_key "$older" $destroy_old_tokens
+    rac_remove_existing_token "$newer" 
+    rac_rotate_single_key "$older" $destroy_old_tokens
   else
 
-    remove_existing_token "$older" 
-    rotate_single_key "$newer" $destroy_old_tokens
+    rac_remove_existing_token "$older" 
+    rac_rotate_single_key "$newer" $destroy_old_tokens
   fi
 }
