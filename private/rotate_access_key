@@ -89,7 +89,7 @@ function rac_create_and_run_callback() {
     rac_print "Callback not passed, printing out credentials instead."
     rac_print "$new_credentials"
   else
-    $rac_callback "$new_credentials"
+    $rac_callback $(echo $new_credentials | jq '.AccessKey.AccessKeyId' -r) $(echo $new_credentials | jq '.AccessKey.SecretAccessKey' -r)
   fi
 }
 
