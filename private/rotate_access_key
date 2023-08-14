@@ -83,7 +83,7 @@ function rac_remove_existing_token() {
 function rac_create_and_run_callback() {
   rac_print "Creating new key..."
   local new_credentials=$(rac_run_iam_command create-access-key)
-  rac_print "Running rac_callback function with new access key..."
+  rac_print "Running callback function with new access key..."
 
   if [[ -z $rac_callback ]]; then
     rac_print "Callback not passed, printing out credentials instead."
